@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# CI에서 gradlew가 CRLF로 올라가서 깨지는 걸 방지
+gradlew text eol=lf

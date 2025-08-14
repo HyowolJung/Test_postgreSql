@@ -17,6 +17,9 @@ jobs:
           java-version: 21
           cache: gradle
 
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
       - name: Gradle build & test
         uses: gradle/actions/setup-gradle@v3
       - run: ./gradlew --no-daemon test installDist
