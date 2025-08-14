@@ -4,14 +4,17 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+  packages: write   # GHCR 푸시에 필요
+
 jobs:
-  build-test:
+  build-test-and-image:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 21
@@ -20,6 +23,20 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Gradle build & test
-        uses: gradle/actions/setup-gradle@v3
+      - uses: gradle/actions/setup-gradle@v3
       - run: ./gradlew --no-daemon test installDist
+
+      - name: Log in to GHCR
+        if: github.event_name == 'push'
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build & (if on push) push image
+        run: |
+          TAG_SHA=ghcr.io/${{ github.repository }}:sha-${{ github.sha }}
+          TAG_LATEST=ghcr.io/${{ github.repository }}:latest
+          docker build -t "$TAG_SHA" .
+          if [ "${{ github.event_name }}" = "push" ]; then
+            docker tag "$TAG_SHA" "$TAG_LATEST"
+            docker push "$TAG_SHA"
+            docker push "$TAG_LATEST"
+          fi
